@@ -23,3 +23,20 @@ Qing Lyu, Xuanmian He
 ```sh
 python staff_scheduling/main.py --solver cplex
 ```
+
+
+## Bus Scheduling and Routing
+
+The `bus_scheduling_routing` module includes three methods:
+
+1. **Column Generation**  
+   - File: `bus_scheduling_routing/column_gen.py`  
+   - Description: Implements a column generation approach for large-scale bus scheduling or routing problems.
+
+2. **Fixed Cluster**  
+   - File: `bus_scheduling_routing/fleet_schedule.ipynb`  
+   - Description: Implements a fixed cluster based approach.
+
+3. **Route Pool Generation**  
+   - File: `bus_scheduling_routing/fleet_schedule.ipynb`  
+   - Description: Implements a route pool generation approach.
