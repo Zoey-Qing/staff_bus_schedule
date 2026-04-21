@@ -6,6 +6,7 @@ def run_evaluation(args, df_schedule, data_loader):
     print(f"\n>>> [Evaluation] Generating report: {args.report_file}...")
     non_saudi_set = set(data_loader.non_saudi_staff_ids)
 
+    # === 新增：按 Cluster 统计 Bus Trip 次数 ===
     df_ns = df_schedule[df_schedule['Staff'].isin(non_saudi_set)].copy()
     if not df_ns.empty:
         df_ns['Cluster'] = df_ns['Staff'].map(data_loader.staff_cluster_map)
@@ -17,6 +18,7 @@ def run_evaluation(args, df_schedule, data_loader):
         for cluster, group in df_ns.groupby('Cluster'):
             c_starts = set(group['Start_Time'].unique())
             c_ends = set(group['End_Time'].unique())
+            # 每发一次班车(不管接/送)均算作1次Trip（与目标函数公式完全对应）
             c_total = len(c_starts) + len(c_ends)
             total_cluster_trips += c_total
             print(f"  Cluster '{cluster}': {c_total} Trips (Starts: {len(c_starts)}, Ends: {len(c_ends)})")

@@ -4,27 +4,48 @@ import datetime
 import pandas as pd
 from args import get_args
 from data_loader import DataLoader
-from evaluation import run_evaluation
+from evaluation_new import run_evaluation
 from visualization import generate_visualizations
 
+class Logger(object):
+    def __init__(self, filename="log.txt"):
+        self.terminal = sys.stdout
+        self.log = open(filename, "w", encoding='utf-8')
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+        self.log.flush()
+
+    def flush(self):
+        self.terminal.flush()
+        self.log.flush()
 
 def main():
+    os.makedirs("results", exist_ok=True)
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
     args = get_args()
+    print("=== Staff Scheduling System (Cluster-By-Cluster) ===")
     solver_choice = getattr(args, 'solver_engine', 'ortools').lower()
     if solver_choice == 'cplex':
         print("  - Solver Engine: CPLEX")
-        from solver_cplex import StaffSchedulingSolver
+        from solver_cplex_new import StaffSchedulingSolver
     elif solver_choice == 'highs':
         print("  - Solver Engine: HiGHS")
-        from solver_highs import StaffSchedulingSolver
+        from solver_highs_new import StaffSchedulingSolver
     else:
-        print("  - Solver Engine: OR-Tools (CP-SAT)")
-        from solver_ortools import StaffSchedulingSolver
+        print("  - Solver Engine Not Found. Choose 'cplex' or 'highs'.")
+        exit(1)
 
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = os.path.join("results", f"{timestamp}_{solver_choice}")
     os.makedirs(output_dir, exist_ok=True)
     print(f"  - Output Directory: {output_dir}")
+
+    log_filename = os.path.join(output_dir, f"run_log_{timestamp}.txt")
+    sys.stdout = Logger(log_filename)
+    print(f"=== All console output will be saved to: {log_filename} ===")
 
     original_schedule_file = getattr(args, 'schedule_file', 'schedule_result.csv')
     original_report_file = getattr(args, 'report_file', 'verification_report.xlsx')
@@ -53,9 +74,9 @@ def main():
             args.schedule_file = os.path.join(output_dir, "finetuned_" + os.path.basename(original_schedule_file))
             args.report_file = os.path.join(output_dir, "finetuned_" + os.path.basename(original_report_file))
         else:
-            print(f"  - Mode: NORMAL (with bus constraints)")
+            print(f"  - Mode: NORMAL (From scratch with bus constraints)")
     else:
-        print("  - Mode: NORMAL (without bus constraints)")
+        print("  - Mode: NORMAL (From scratch without bus constraints)")
         print("  - Bus Constraint: OFF")
 
     try:
@@ -67,6 +88,7 @@ def main():
         sys.exit(1)
 
     all_results = []
+    all_violations = []
 
     for cluster_id in all_clusters:
         print(f"\n{'=' * 60}")
@@ -91,8 +113,17 @@ def main():
         if is_solved:
             obj_val = solver.get_objective_value()
             print(f">>> Objective Value for {cluster_id}: {obj_val:.2f}")
+
             df_res = solver.export_results()
             all_results.append(df_res)
+
+            # --- NEW: Extract soft constraint violations for this cluster ---
+            if hasattr(solver, 'export_violate_registry'):
+                df_viol = solver.export_violate_registry()
+                if not df_viol.empty:
+                    # Optional: Add cluster ID column for tracking
+                    df_viol.insert(0, 'Cluster', cluster_id)
+                    all_violations.append(df_viol)
         else:
             print(f">>> Optimization failed for cluster {cluster_id}.")
 
@@ -100,6 +131,14 @@ def main():
         final_df = pd.concat(all_results, ignore_index=True)
         final_df.to_csv(args.schedule_file, index=False)
         print(f"\n>>> Global raw schedule saved to: {args.schedule_file}")
+
+        if all_violations:
+            final_viol_df = pd.concat(all_violations, ignore_index=True)
+            viol_file_path = os.path.join(output_dir, "violation_registry.csv")
+            final_viol_df.to_csv(viol_file_path, index=False)
+            print(f">>> Soft Constraint Violations Registry saved to: {viol_file_path}")
+        else:
+            print("\n>>> No soft constraints were violated globally.")
 
         print("\n>>> Generating Global Evaluation Report & Plots...")
         global_loader = DataLoader(args, target_cluster=None)

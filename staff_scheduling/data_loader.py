@@ -9,6 +9,7 @@ START_HOUR_OFFSET = 5  # Sunday 05:00 AM is t=0
 
 
 class DataLoader:
+    # === 修改：支持传入 target_cluster 进行数据切割 ===
     def __init__(self, args, target_cluster=None):
         self.args = args
         self.target_cluster = target_cluster
@@ -50,6 +51,7 @@ class DataLoader:
         return self
 
     def _load_raw_data(self):
+        # 1. 过滤 Branches
         df_branches = pd.read_excel(self.args.data_file, sheet_name="branches", header=0)
         df_branches.columns = [c.strip() for c in df_branches.columns]
 
@@ -60,6 +62,7 @@ class DataLoader:
         valid_branches = set(self.branch_cluster_map.keys())
         self.cluster_ids = list(set(self.branch_cluster_map.values()))
 
+        # 2. 过滤 Staff
         df_staff = pd.read_excel(self.args.data_file, sheet_name="staff", header=0)
         df_staff.columns = [c.strip() for c in df_staff.columns]
 
@@ -88,8 +91,12 @@ class DataLoader:
         self.wage_ot = df_staff.set_index('staff_id')['overtime_hourly_wage'].to_dict()
         self.skill_score = df_staff.set_index('staff_id')['skill_score'].to_dict()
 
+        # 3. 过滤 Demand
         df_demand = pd.read_excel(self.args.data_file, sheet_name="staff_demand", header=0)
 
+        #
+        # df_demand['staff_demand'] = df_demand['staff_demand'].apply(lambda x: max(x-1, 0))
+        #
         if self.target_cluster:
             df_demand = df_demand[df_demand['branch_id'].isin(valid_branches)]
 
