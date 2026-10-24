@@ -137,18 +137,18 @@ def get_args():
     parser.add_argument('--enforce_bus', action='store_true', help='Enforce bus schedule for non-Saudi staff')
 
     # --- BIG-M PENALTY WEIGHTS (HIERARCHY) ---
-    parser.add_argument('--w_demand_shortage', type=float, default=100000.0, help='Penalty for hard demand shortage')
-    parser.add_argument('--w_priority_1', type=float, default=10000.0,
+    parser.add_argument('--w_demand_shortage', type=float, default=1000.0, help='Penalty for hard demand shortage')
+    parser.add_argument('--w_priority_1', type=float, default=1000.0,
                         help='Weight for Most Important optional constraints')
-    parser.add_argument('--w_priority_2', type=float, default=1000.0,
+    parser.add_argument('--w_priority_2', type=float, default=100.0,
                         help='Weight for High priority optional constraints')
     parser.add_argument('--w_priority_3', type=float, default=100.0,
                         help='Weight for Medium priority optional constraints')
-    parser.add_argument('--w_priority_4', type=float, default=10.0,
+    parser.add_argument('--w_priority_4', type=float, default=1.0,
                         help='Weight for Least Important optional constraints')
 
     # --- General Weights ---
-    parser.add_argument('--w_understaffing', type=float, default=500,
+    parser.add_argument('--w_understaffing', type=float, default=1000,
                         help='Legacy penalty cost per unit of understaffing')
     parser.add_argument('--w_manager_absence', type=float, default=100, help='Penalty cost because of manager absence')
     parser.add_argument('--w_experienced', type=float, default=0.0,

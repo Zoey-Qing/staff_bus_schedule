@@ -186,7 +186,7 @@ def generate_visualizations(args):
 
 if __name__ == "__main__":
     from args import get_args
-    results_dir = os.path.join("results", f"20260407_143845_cplex")
+    results_dir = os.path.join("results", f"20260517_113944_cplex")
     args = get_args()
     args.schedule_file = os.path.join(results_dir, args.schedule_file)
     args.report_file = os.path.join(results_dir, args.report_file)

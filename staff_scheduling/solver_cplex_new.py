@@ -1,5 +1,7 @@
 from docplex.mp.model import Model
 import pandas as pd
+import random
+import sys
 
 
 class StaffSchedulingSolver:
@@ -27,7 +29,7 @@ class StaffSchedulingSolver:
         self.sl_mgr_last = {}
         self.v_min_onsite_not_mgr = {}
         self.v_min_work_days = {}
-        self.v_idle = {}  # NEW: Slack for completely idle staff
+        self.v_idle = {}
 
     def build_model(self):
         staff_ids = self.data.staff_ids
@@ -98,14 +100,15 @@ class StaffSchedulingSolver:
                     else:
                         term_deviation += w_change * self.x[i, s['id']]
 
-        M1 = 1000
-        M2 = 1000
-        M3 = 10
-        M4 = 1
+        # Dynamic Big-M loading for sensitivity analysis
+        M1 = getattr(self.args, 'M1', 1000)
+        M2 = getattr(self.args, 'M2', 100)
+        M3 = getattr(self.args, 'M3', 100)
+        M4 = getattr(self.args, 'M4', 1)
 
         penalty_m1 = M1 * (
                 self.mdl.sum(self.sl[t] for t in time_slots) +
-                self.mdl.sum(self.v_idle[i] for i in staff_ids)  # Penalize heavily if completely idle
+                self.mdl.sum(self.v_idle[i] for i in staff_ids)
         )
 
         penalty_m2 = M2 * (
@@ -128,20 +131,23 @@ class StaffSchedulingSolver:
 
         penalty_m4 = M4 * self.mdl.sum(self.v_min_onsite_not_mgr[t] for t in time_slots)
 
-        # Extra: L1 regularization
+        # L1 Regularization to enforce sparsity
         lambda_l1 = 0.1
         term_l1_reg = self.mdl.sum(lambda_l1 * self.x[i, s['id']] for i in staff_ids for s in shifts)
 
-        # Extra: Cost Perturbation
+        # White-noise Perturbation to break symmetry
         term_perturbation = 0
+        noise_level = getattr(self.args, 'noise_level', 0.0)
+
         for idx, i in enumerate(staff_ids):
-            pert_val = 0.0001 * idx
+            pert_val = (0.00001 * idx) + random.uniform(0, noise_level)
             for s in shifts:
                 term_perturbation += pert_val * self.x[i, s['id']]
 
         term_penalties = penalty_m1 + penalty_m2 + penalty_m3 + penalty_m4
 
-        self.mdl.minimize(term_wage + term_ot + term_bus_trip + term_deviation + term_penalties + term_l1_reg + term_perturbation)
+        self.mdl.minimize(
+            term_wage + term_ot + term_bus_trip + term_deviation + term_penalties + term_l1_reg + term_perturbation)
 
         shifts_at_work_t = {t: [] for t in time_slots}
         shifts_at_extended_t = {t: [] for t in time_slots}
@@ -203,7 +209,7 @@ class StaffSchedulingSolver:
                 elif i in expat_set and dur < getattr(self.args, 'min_shift_expat', 9):
                     self.mdl.add_constraint(self.x[i, sid] == 0)
 
-                if i in expat_not_mgr and dur > getattr(self.args, 'max_shift_expat_not_mgr_hard', 16):
+                if i in expat_not_mgr and dur > getattr(self.args, 'max_shift_expat_not_mgr_hard', 15):
                     self.mdl.add_constraint(self.x[i, sid] == 0)
 
                 if i in saudi_not_mgr:
@@ -228,8 +234,11 @@ class StaffSchedulingSolver:
                     continue
 
                 daily_hours = self.mdl.sum(self.x[i, sid] * self.data.shift_map[sid]['duration'] for sid in relevant)
-                self.mdl.add_constraint(daily_hours <= 24 * self.w[i, d])
                 self.mdl.add_constraint(daily_hours >= 0.5 * self.w[i, d])
+                self.mdl.add_constraint(daily_hours <= 16 * self.w[i, d])
+
+                for sid in relevant:
+                    self.mdl.add_constraint(self.x[i, sid] <= self.w[i, d])
 
                 if i in saudi_not_mgr:
                     standard_min = getattr(self.args, 'min_daily_saudi_not_mgr', 6)
@@ -239,7 +248,6 @@ class StaffSchedulingSolver:
                     self.mdl.add_constraint(self.o_daily[i, d] >= daily_hours - standard_min)
                 else:
                     self.mdl.add_constraint(self.o_daily[i, d] == 0)
-
 
                 if i in manager_set:
                     self.mdl.add_constraint(self.o_daily[i, d] == 0)
@@ -273,7 +281,6 @@ class StaffSchedulingSolver:
                         daily_hours - self.v_max_daily[i, d] <= getattr(self.args, 'max_daily_expat_not_mgr_soft', 12) *
                         self.w[i, d])
 
-            # FIXED: Avoid 0 >= 1 paradox by using slack variable
             self.mdl.add_constraint(self.mdl.sum(self.w[i, d] for d in days) + self.v_idle[i] >= 1)
 
             target_work_days = 7 - getattr(self.args, 'days_off', 1)
@@ -298,7 +305,6 @@ class StaffSchedulingSolver:
             self.mdl.add_constraint(supply_all + self.sl[t] >= self.data.demand[t])
 
             if self.data.demand[t] > 0:
-                # FIXED: Protect against empty shift pools at specific hours
                 if shifts_at_work_t[t]:
                     self.mdl.add_constraint(supply_all >= getattr(self.args, 'min_onsite_all_hard', 1))
 
@@ -345,7 +351,7 @@ class StaffSchedulingSolver:
         target_gap = getattr(self.args, 'mip_gap', 0.01)
         self.mdl.parameters.mip.tolerances.mipgap = target_gap
 
-        self.solution = self.mdl.solve(log_output=True)
+        self.solution = self.mdl.solve(log_output=sys.stdout)
 
         if self.solution:
             print(">>> Solution Found!")
@@ -456,3 +462,48 @@ class StaffSchedulingSolver:
                         'Bus_Compatible': bus_compatible
                     })
         return pd.DataFrame(records)
+
+    def get_kpi_summary(self):
+        if not self.solution:
+            return {}
+
+        kpis = {}
+
+        try:
+            details = self.mdl.get_solve_details()
+            kpis['mip_gap'] = details.mip_relative_gap
+            kpis['node_count'] = details.nb_nodes_processed
+        except Exception:
+            kpis['mip_gap'] = 'N/A'
+            kpis['node_count'] = 'N/A'
+
+        understaffing = 0
+        for t in self.data.time_slots:
+            understaffing += self.solution.get_value(self.sl[t])
+        kpis['understaffing_hours'] = round(understaffing, 2)
+
+        overtime = 0
+        for i in self.data.staff_ids:
+            for d in self.data.days:
+                overtime += self.solution.get_value(self.v_max_daily[i, d])
+        kpis['overtime_hours'] = round(overtime, 2)
+
+        # Calculate regular wage cost
+        regular_wage_cost = 0
+        for i in self.data.staff_ids:
+            for s in self.data.shifts:
+                if self.solution.get_value(self.x[i, s['id']]) > 0.5:
+                    regular_wage_cost += self.data.wage_reg[i] * s['duration']
+        kpis['regular_wage_cost'] = round(regular_wage_cost, 2)
+
+        # Calculate overtime wage cost
+        overtime_wage_cost = 0
+        for i in self.data.staff_ids:
+            for d in self.data.days:
+                # self.o_daily[i, d] represents the overtime hours for staff i on day d
+                overtime_wage_cost += self.data.wage_ot[i] * self.solution.get_value(self.o_daily[i, d])
+        kpis['overtime_wage_cost'] = round(overtime_wage_cost, 2)
+
+        kpis['total_wage_cost'] = round(regular_wage_cost + overtime_wage_cost, 2)
+
+        return kpis

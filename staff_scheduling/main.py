@@ -34,7 +34,7 @@ def main():
         from solver_cplex_new import StaffSchedulingSolver
     elif solver_choice == 'highs':
         print("  - Solver Engine: HiGHS")
-        from solver_highs_new import StaffSchedulingSolver
+        from archive.solver_highs_new import StaffSchedulingSolver
     else:
         print("  - Solver Engine Not Found. Choose 'cplex' or 'highs'.")
         exit(1)
@@ -113,6 +113,14 @@ def main():
         if is_solved:
             obj_val = solver.get_objective_value()
             print(f">>> Objective Value for {cluster_id}: {obj_val:.2f}")
+
+            kpi_summary = solver.get_kpi_summary()
+            if kpi_summary:
+                if 'regular_wage_cost' in kpi_summary:
+                    print(f">>> Regular Wage Cost for {cluster_id}: {kpi_summary['regular_wage_cost']:.2f}")
+                if 'overtime_wage_cost' in kpi_summary:
+                    print(f">>> Overtime Wage Cost for {cluster_id}: {kpi_summary['overtime_wage_cost']:.2f}")
+                print(f">>> Total Wage Cost for {cluster_id}: {kpi_summary.get('total_wage_cost', 0):.2f}")
 
             df_res = solver.export_results()
             all_results.append(df_res)
