@@ -51,7 +51,7 @@ import argparse
 def get_args():
     parser = argparse.ArgumentParser(description="Staff Scheduling Optimization")
 
-    parser.add_argument('--solver_engine', type=str, default='cplex', choices=['cplex', 'ortools', 'highs'],
+    parser.add_argument('--solver_engine', type=str, default='cplex', choices=['cplex'],
                         help='Select optimization engine')
 
     # --- File Paths ---
@@ -138,14 +138,13 @@ def get_args():
 
     # --- BIG-M PENALTY WEIGHTS (HIERARCHY) ---
     parser.add_argument('--w_demand_shortage', type=float, default=1000.0, help='Penalty for hard demand shortage')
-    parser.add_argument('--w_priority_1', type=float, default=1000.0,
-                        help='Weight for Most Important optional constraints')
-    parser.add_argument('--w_priority_2', type=float, default=100.0,
-                        help='Weight for High priority optional constraints')
-    parser.add_argument('--w_priority_3', type=float, default=100.0,
-                        help='Weight for Medium priority optional constraints')
-    parser.add_argument('--w_priority_4', type=float, default=1.0,
-                        help='Weight for Least Important optional constraints')
+
+    # Penalty hierarchy read by solver_cplex_new.py.
+    # Paper values: [1000, 100, 10, 1].
+    parser.add_argument('--M1', type=float, default=1000.0, help='Penalty level 1: demand shortage, idle staff')
+    parser.add_argument('--M2', type=float, default=100.0, help='Penalty level 2: critical soft limits')
+    parser.add_argument('--M3', type=float, default=10.0, help='Penalty level 3: standard soft limits')
+    parser.add_argument('--M4', type=float, default=1.0, help='Penalty level 4: minor onsite requirements')
 
     # --- General Weights ---
     parser.add_argument('--w_understaffing', type=float, default=1000,

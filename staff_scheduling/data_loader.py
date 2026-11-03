@@ -19,6 +19,7 @@ class DataLoader:
         self.non_new_staff_ids = []
         self.non_saudi_staff_ids = []
         self.staff_branch_map = {}
+        self.branch_ids = []
 
         self.branch_cluster_map = {}
         self.staff_cluster_map = {}
@@ -30,8 +31,8 @@ class DataLoader:
         self.wage_reg = {}
         self.wage_ot = {}
         self.skill_score = {}
-        self.demand = {}
-        self.is_peak = {}
+        self.demand = {}  # network (or cluster) total per hour, kept for reporting
+        self.branch_demand = {}  # (branch_id, t) -> staff required at that branch
         self.operating_hours = []
 
         self.shifts = []
@@ -60,6 +61,7 @@ class DataLoader:
 
         self.branch_cluster_map = df_branches.set_index('branch_id')['cluster_id'].to_dict()
         valid_branches = set(self.branch_cluster_map.keys())
+        self.branch_ids = sorted(valid_branches)
         self.cluster_ids = list(set(self.branch_cluster_map.values()))
 
         # 2. 过滤 Staff
@@ -106,14 +108,18 @@ class DataLoader:
         raw_abs_h = df_demand['day'].map(day_map) * 24 + df_demand['hour']
         df_demand['hour_of_week'] = (raw_abs_h - START_HOUR_OFFSET) % 168
 
+        branch_series = df_demand.groupby(['branch_id', 'hour_of_week'])['staff_demand'].sum()
+        self.branch_demand = {(b, t): 0 for b in self.branch_ids for t in self.time_slots}
+        for (b, t), d in branch_series.items():
+            if b in valid_branches:
+                self.branch_demand[(b, int(t))] = int(d)
+
         demand_series = df_demand.groupby('hour_of_week')['staff_demand'].sum()
         demand_dict = demand_series.to_dict()
 
         self.demand = {t: demand_dict.get(t, 0) for t in self.time_slots}
         self.operating_hours = [t for t, d in self.demand.items() if d > 0]
 
-        avg_demand = np.mean(list(self.demand.values())) if self.demand.values() else 0
-        self.is_peak = {t: 1 if self.demand[t] > avg_demand else 0 for t in self.time_slots}
 
     def _load_operation_hours(self):
         try:

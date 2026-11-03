@@ -69,13 +69,17 @@ class StaffSchedulingSolver:
         self.b_start = self.mdl.binary_var_matrix(clusters, time_slots, name="bus_start")
         self.b_end = self.mdl.binary_var_matrix(clusters, time_slots, name="bus_end")
 
-        self.sl = self.mdl.continuous_var_dict(time_slots, lb=0, name="slack_demand")
+        # Coverage is checked per branch: staff only count towards their own home branch.
+        self.active_bt = [(b, t) for b in self.data.branch_ids for t in time_slots
+                          if self.data.branch_demand.get((b, t), 0) > 0]
+
+        self.sl = self.mdl.continuous_var_dict(self.active_bt, lb=0, name="slack_demand")
         self.v_max_daily = self.mdl.continuous_var_matrix(staff_ids, days, lb=0, name="v_max_daily")
         self.v_max_shift = self.mdl.continuous_var_matrix(staff_ids, shift_ids, lb=0, name="v_max_shift")
-        self.v_min_onsite_all = self.mdl.continuous_var_dict(time_slots, lb=0, name="v_min_onsite_all")
-        self.v_min_onsite_mgr = self.mdl.continuous_var_dict(time_slots, lb=0, name="v_min_onsite_mgr")
-        self.v_min_onsite_not_mgr = self.mdl.continuous_var_dict(time_slots, lb=0, name="v_min_onsite_not_mgr")
-        self.v_min_onsite_not_new = self.mdl.continuous_var_dict(time_slots, lb=0, name="v_min_onsite_not_new")
+        self.v_min_onsite_all = self.mdl.continuous_var_dict(self.active_bt, lb=0, name="v_min_onsite_all")
+        self.v_min_onsite_mgr = self.mdl.continuous_var_dict(self.active_bt, lb=0, name="v_min_onsite_mgr")
+        self.v_min_onsite_not_mgr = self.mdl.continuous_var_dict(self.active_bt, lb=0, name="v_min_onsite_not_mgr")
+        self.v_min_onsite_not_new = self.mdl.continuous_var_dict(self.active_bt, lb=0, name="v_min_onsite_not_new")
         self.v_min_work_days = self.mdl.continuous_var_dict(staff_ids, lb=0, name="v_min_work_days")
         self.v_idle = self.mdl.continuous_var_dict(staff_ids, lb=0, name="v_idle")
 
@@ -103,17 +107,17 @@ class StaffSchedulingSolver:
         # Dynamic Big-M loading for sensitivity analysis
         M1 = getattr(self.args, 'M1', 1000)
         M2 = getattr(self.args, 'M2', 100)
-        M3 = getattr(self.args, 'M3', 100)
+        M3 = getattr(self.args, 'M3', 10)
         M4 = getattr(self.args, 'M4', 1)
 
         penalty_m1 = M1 * (
-                self.mdl.sum(self.sl[t] for t in time_slots) +
+                self.mdl.sum(self.sl[bt] for bt in self.active_bt) +
                 self.mdl.sum(self.v_idle[i] for i in staff_ids)
         )
 
         penalty_m2 = M2 * (
                 self.mdl.sum(self.v_max_daily[i, d] for i in saudi_not_mgr for d in days) +
-                self.mdl.sum(self.v_min_onsite_not_new[t] for t in time_slots)
+                self.mdl.sum(self.v_min_onsite_not_new[bt] for bt in self.active_bt)
         )
 
         penalty_m3 = M3 * (
@@ -124,12 +128,12 @@ class StaffSchedulingSolver:
                 self.mdl.sum(self.v_max_shift[i, sid] for i in expat_mgr for sid in shift_ids) +
                 self.mdl.sum(self.v_max_shift[i, sid] for i in expat_not_mgr for sid in shift_ids) +
                 self.mdl.sum(self.v_max_daily[i, d] for i in expat_not_mgr for d in days) +
-                self.mdl.sum(self.v_min_onsite_all[t] for t in time_slots) +
-                self.mdl.sum(self.v_min_onsite_mgr[t] for t in time_slots) +
+                self.mdl.sum(self.v_min_onsite_all[bt] for bt in self.active_bt) +
+                self.mdl.sum(self.v_min_onsite_mgr[bt] for bt in self.active_bt) +
                 self.mdl.sum(self.sl_mgr_first[bd] + self.sl_mgr_last[bd] for bd in branch_days)
         )
 
-        penalty_m4 = M4 * self.mdl.sum(self.v_min_onsite_not_mgr[t] for t in time_slots)
+        penalty_m4 = M4 * self.mdl.sum(self.v_min_onsite_not_mgr[bt] for bt in self.active_bt)
 
         # L1 Regularization to enforce sparsity
         lambda_l1 = 0.1
@@ -159,8 +163,9 @@ class StaffSchedulingSolver:
         for s in shifts:
             sid = s['id']
             for t in s['covers']: shifts_at_work_t[t].append(sid)
-            extended_end = min(168, s['end'] + min_break)
-            for t in range(s['start'], extended_end): shifts_at_extended_t[t].append(sid)
+            # The weekly schedule repeats, so the rest period after a late shift wraps into the next week
+            # (consistent with the bus routing, where a shift ending at hour 168 is a pick-up at hour 0).
+            for t in range(s['start'], s['end'] + min_break): shifts_at_extended_t[t % 168].append(sid)
             day_idx = s['start'] // 24
             if 0 <= day_idx < 7: shifts_at_day[day_idx].append(sid)
             shifts_starting_at[s['start'] % 168].append(sid)
@@ -296,26 +301,28 @@ class StaffSchedulingSolver:
                 if shifts_at_extended_t[t]:
                     self.mdl.add_constraint(self.mdl.sum(self.x[i, sid] for sid in shifts_at_extended_t[t]) <= 1)
 
-        for t in time_slots:
-            supply_all = self.mdl.sum(self.x[i, sid] for i in staff_ids for sid in shifts_at_work_t[t])
-            supply_mgr = self.mdl.sum(self.x[i, sid] for i in manager_set for sid in shifts_at_work_t[t])
-            supply_non_mgr = self.mdl.sum(self.x[i, sid] for i in non_manager_set for sid in shifts_at_work_t[t])
-            supply_not_new = self.mdl.sum(self.x[i, sid] for i in not_new_set for sid in shifts_at_work_t[t])
+        for b, t in self.active_bt:
+            staff_b = staff_by_branch.get(b, [])
+            supply_all = self.mdl.sum(self.x[i, sid] for i in staff_b for sid in shifts_at_work_t[t])
+            supply_mgr = self.mdl.sum(self.x[i, sid] for i in staff_b if i in manager_set for sid in shifts_at_work_t[t])
+            supply_non_mgr = self.mdl.sum(
+                self.x[i, sid] for i in staff_b if i in non_manager_set for sid in shifts_at_work_t[t])
+            supply_not_new = self.mdl.sum(
+                self.x[i, sid] for i in staff_b if i in not_new_set for sid in shifts_at_work_t[t])
 
-            self.mdl.add_constraint(supply_all + self.sl[t] >= self.data.demand[t])
+            self.mdl.add_constraint(supply_all + self.sl[b, t] >= self.data.branch_demand[b, t])
 
-            if self.data.demand[t] > 0:
-                if shifts_at_work_t[t]:
-                    self.mdl.add_constraint(supply_all >= getattr(self.args, 'min_onsite_all_hard', 1))
+            if shifts_at_work_t[t] and staff_b:
+                self.mdl.add_constraint(supply_all >= getattr(self.args, 'min_onsite_all_hard', 1))
 
-                self.mdl.add_constraint(
-                    supply_not_new + self.v_min_onsite_not_new[t] >= getattr(self.args, 'min_onsite_not_new_soft', 1))
-                self.mdl.add_constraint(
-                    supply_all + self.v_min_onsite_all[t] >= getattr(self.args, 'min_onsite_all_soft', 2))
-                self.mdl.add_constraint(
-                    supply_mgr + self.v_min_onsite_mgr[t] >= getattr(self.args, 'min_onsite_mgr_soft', 1))
-                self.mdl.add_constraint(
-                    supply_non_mgr + self.v_min_onsite_not_mgr[t] >= getattr(self.args, 'min_onsite_not_mgr_soft', 2))
+            self.mdl.add_constraint(
+                supply_not_new + self.v_min_onsite_not_new[b, t] >= getattr(self.args, 'min_onsite_not_new_soft', 1))
+            self.mdl.add_constraint(
+                supply_all + self.v_min_onsite_all[b, t] >= getattr(self.args, 'min_onsite_all_soft', 2))
+            self.mdl.add_constraint(
+                supply_mgr + self.v_min_onsite_mgr[b, t] >= getattr(self.args, 'min_onsite_mgr_soft', 1))
+            self.mdl.add_constraint(
+                supply_non_mgr + self.v_min_onsite_not_mgr[b, t] >= getattr(self.args, 'min_onsite_not_mgr_soft', 2))
 
         for branch_id, limits in self.data.branch_operation_limits.items():
             branch_managers = managers_by_branch.get(branch_id, [])
@@ -405,27 +412,33 @@ class StaffSchedulingSolver:
                         "Violation_Amount": round(val_shift, 2)
                     })
 
-        for t in self.data.time_slots:
-            val_all = self.solution.get_value(self.v_min_onsite_all[t])
+        for b, t in self.active_bt:
+            val_short = self.solution.get_value(self.sl[b, t])
+            if val_short > tol:
+                violations.append(
+                    {"Staff": "ALL", "Branch": b, "Day/Time": f"Time {t}", "Constraint": "Demand Shortage",
+                     "Violation_Amount": round(val_short, 2)})
+
+            val_all = self.solution.get_value(self.v_min_onsite_all[b, t])
             if val_all > tol:
                 violations.append(
-                    {"Staff": "ALL", "Branch": "Global", "Day/Time": f"Time {t}", "Constraint": "Min Onsite All",
+                    {"Staff": "ALL", "Branch": b, "Day/Time": f"Time {t}", "Constraint": "Min Onsite All",
                      "Violation_Amount": round(val_all, 2)})
 
-            val_mgr = self.solution.get_value(self.v_min_onsite_mgr[t])
+            val_mgr = self.solution.get_value(self.v_min_onsite_mgr[b, t])
             if val_mgr > tol:
                 violations.append(
-                    {"Staff": "Manager", "Branch": "Global", "Day/Time": f"Time {t}", "Constraint": "Min Onsite Mgr",
+                    {"Staff": "Manager", "Branch": b, "Day/Time": f"Time {t}", "Constraint": "Min Onsite Mgr",
                      "Violation_Amount": round(val_mgr, 2)})
 
-            val_not_mgr = self.solution.get_value(self.v_min_onsite_not_mgr[t])
+            val_not_mgr = self.solution.get_value(self.v_min_onsite_not_mgr[b, t])
             if val_not_mgr > tol:
-                violations.append({"Staff": "Not Manager", "Branch": "Global", "Day/Time": f"Time {t}",
+                violations.append({"Staff": "Not Manager", "Branch": b, "Day/Time": f"Time {t}",
                                    "Constraint": "Min Onsite Not Mgr", "Violation_Amount": round(val_not_mgr, 2)})
 
-            val_not_new = self.solution.get_value(self.v_min_onsite_not_new[t])
+            val_not_new = self.solution.get_value(self.v_min_onsite_not_new[b, t])
             if val_not_new > tol:
-                violations.append({"Staff": "Not New", "Branch": "Global", "Day/Time": f"Time {t}",
+                violations.append({"Staff": "Not New", "Branch": b, "Day/Time": f"Time {t}",
                                    "Constraint": "Min Onsite Not New", "Violation_Amount": round(val_not_new, 2)})
 
         for bd in self.sl_mgr_first:
@@ -478,8 +491,8 @@ class StaffSchedulingSolver:
             kpis['node_count'] = 'N/A'
 
         understaffing = 0
-        for t in self.data.time_slots:
-            understaffing += self.solution.get_value(self.sl[t])
+        for bt in self.active_bt:
+            understaffing += self.solution.get_value(self.sl[bt])
         kpis['understaffing_hours'] = round(understaffing, 2)
 
         overtime = 0

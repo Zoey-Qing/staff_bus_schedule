@@ -147,9 +147,30 @@ def run_evaluation(args, df_schedule, data_loader):
 
     df_staff = pd.DataFrame(staff_stats)
 
+    # === Demand Check per branch (staff only count at their home branch) ===
+    branch_supply = {}
+    for _, row in df_schedule.iterrows():
+        b = data_loader.staff_branch_map.get(row['Staff'])
+        s, d = int(row['Start']), int(row['Duration'])
+        for t in range(s, s + d):
+            if 0 <= t < 168:
+                branch_supply[(b, t)] = branch_supply.get((b, t), 0) + 1
+    branch_rows = []
+    for (b, t), target in data_loader.branch_demand.items():
+        supply = branch_supply.get((b, t), 0)
+        if target == 0 and supply == 0:
+            continue
+        branch_rows.append({'branch_id': b, 'hour_of_week': t, 'Target_Demand': target,
+                            'Actual_Supply': supply, 'Gap': supply - target})
+    df_branch = pd.DataFrame(branch_rows)
+    if not df_branch.empty:
+        print(f"  Branch-level understaffing: {-df_branch.loc[df_branch['Gap'] < 0, 'Gap'].sum():.0f} staff-hours, "
+              f"overstaffing: {df_branch.loc[df_branch['Gap'] > 0, 'Gap'].sum():.0f} staff-hours")
+
     try:
         with pd.ExcelWriter(args.report_file, engine='openpyxl') as writer:
-            df_verify.to_excel(writer, sheet_name='Demand_Check', index=False)
+            df_verify.to_excel(writer, sheet_name='Demand_Check_Pooled', index=False)
+            df_branch.to_excel(writer, sheet_name='Branch_Demand_Check', index=False)
             df_staff.to_excel(writer, sheet_name='Staff_Check', index=False)
         print(f">>> Report saved: {args.report_file}")
     except Exception as e:

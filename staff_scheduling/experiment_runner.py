@@ -117,9 +117,11 @@ def run_comprehensive_experiments():
             for t in loader.demand:
                 loader.demand[t] = np.round(loader.demand[t] * scale, 0).astype(int)
                 # Round to nearest integer after scaling
+            for bt in loader.branch_demand:
+                loader.branch_demand[bt] = int(np.round(loader.branch_demand[bt] * scale, 0))
 
         # Keep M-weights and noise stable for this experiment
-        args.M1, args.M2, args.M3, args.M4 = 1000, 100, 100, 1
+        args.M1, args.M2, args.M3, args.M4 = 1000, 100, 10, 1
         args.noise_level = 0.001
 
         solver = StaffSchedulingSolver(args, loader)

@@ -32,11 +32,8 @@ def main():
     if solver_choice == 'cplex':
         print("  - Solver Engine: CPLEX")
         from solver_cplex_new import StaffSchedulingSolver
-    elif solver_choice == 'highs':
-        print("  - Solver Engine: HiGHS")
-        from archive.solver_highs_new import StaffSchedulingSolver
     else:
-        print("  - Solver Engine Not Found. Choose 'cplex' or 'highs'.")
+        print("  - Only CPLEX is supported (the HiGHS model is in legacy/, decision D12).")
         exit(1)
 
     output_dir = os.path.join("results", f"{timestamp}_{solver_choice}")
