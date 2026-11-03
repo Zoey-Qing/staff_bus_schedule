@@ -40,3 +40,20 @@ The `bus_scheduling_routing` module includes three methods:
 3. **Route Pool Generation**  
    - File: `bus_scheduling_routing/fleet_schedule.ipynb`  
    - Description: Implements a route pool generation approach.
+
+
+## Integrated staff and bus planning
+
+Each cluster is solved as its own instance. Both methods below use the same start schedule, service limits and routing model, and score a schedule by the same realized cost.
+
+- `integrated/net_routing.py`: routing on a time-space network, solved by column generation and an integer program over the generated trips
+- `integrated/net_benders.py`: Benders decomposition with column generation, and the re-timing step
+- `surrogate/staff_surrogate.py`: surrogate-fit heuristic, with the same routing model and re-timing step
+- `integrated/test_net_routing.py`: checks of the routing on small cases against a brute-force model
+
+```sh
+python integrated/net_benders.py staff_scheduling/Berkeley_Mock_Data_25_Stores.xlsx <out_prefix> --cluster <id prefix>
+python surrogate/staff_surrogate.py --cluster <id prefix> --data <data.xlsx> --schedule <out_prefix>_x0.csv --time-limit <seconds> --out <file.json>
+```
+
+CPLEX and docplex are required. All data are synthetic.
