@@ -4,7 +4,7 @@
 Qing Lyu, Xuanmian He
 
 ## Last Update Date
-2026/03/27
+2026/11/13
 
 ## File Description
 - staff_scheduling/
@@ -57,6 +57,46 @@ python surrogate/staff_surrogate.py --cluster <id prefix> --data <data.xlsx> --s
 ```
 
 CPLEX and docplex are required. All data are synthetic.
+
+## Method of the paper (branch-roster column generation + SG-LNS)
+
+The main method runs in two steps on one cluster:
+
+1. `integrated/roster_cg/sg_bpb.py`: column generation over branch rosters with lifted Benders cuts. It returns a
+   lower bound LB, the cut prices, and a schedule x1.
+2. `surrogate/benders_sglns.py`: the surrogate-guided neighborhood search (SG-LNS) started from x1, with opening
+   prices taken from the lifted cuts; the transport-cost estimate is updated by ridge regression after every round.
+
+```sh
+cd integrated/roster_cg
+python sg_bpb.py <data.xlsx> <benders_dir> <out_dir> --cluster <prefix> --time <seconds> --sglns-frac 0 --seed 1 --tag stage1
+cd ../../surrogate
+python benders_sglns.py --cluster <prefix> --data <data.xlsx> --benders-dir <dir with x0 and stage-1 schedule> \
+    --time-limit <seconds> --seed 1 --start benders --prices benders --out <file.json>
+```
+
+`experiments/results/ablation_m5eq/run_ablation.sh` shows the full pipeline as it was run.
+
+Other files:
+- `integrated/roster_cg/branch_dw.py`, `staff_dw.py`: branch-roster and staff-roster column generation with Benders cuts
+  (baselines and building blocks); `ormeci_baseline.py`: transport-aware staff MIP baseline; `check_*.py`: small checks.
+- `integrated/verify_cuts.py`, `verify_routing.py`: numerical checks of the Benders cut and of the routing.
+- `integrated/master_study/`: study of the Benders master problem.
+- `surrogate/lns_variants.py`, `sglns_cutprices.py`: search variants used in the ablations.
+- `integrated/data_gen/make_far2_original.py`: the "far x2" variant of the original data.
+
+## Experiments of the paper (`experiments/`)
+
+- `experiments/results/`: all runs on the original data, seed 1, with the run scripts (`*.sh`), the summaries
+  (`summarize.py`, `summary.csv`) and the raw outputs (json, schedules as csv). `README.txt` gives the order of the runs.
+  Log files are not included.
+- `experiments/instances_new/`: generated instances (tiny T1-T3, larger G1-G5) from `make_instances.py`, the run
+  pipeline `pipeline.sh`, the exact check on the tiny instances `exact_tiny.py` (`exact_T*.json`), and `summarize.py`.
+- `experiments/figures/`: the matplotlib scripts of the paper figures (PDF and PNG).
+
+The scripts were run from a working copy at `E:/schedule` and use absolute paths; change `R`, `D`, `RC`, `SU` at the top
+of a script to your own paths. They refer to the data file as `Berkeley_Mock_Data_25_Stores_original_unbalanced.xlsx`;
+this is the file `staff_scheduling/Berkeley_Mock_Data_25_Stores.xlsx` of this repository (identical content).
 
 ## Data
 

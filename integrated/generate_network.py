@@ -49,7 +49,8 @@ def generate(n_branches, per_acc, acc_per_cluster, buses_per_5, seed, base_xlsx=
     ops = x.parse("operation_hours", header=1)
     bus_info = x.parse("bus_info")
     vehicles = x.parse("vehicles")
-    sched = pd.read_csv(base_schedule)
+    # the cloned schedule is only a by-product; the methods compute their own start schedule
+    sched = pd.read_csv(base_schedule) if Path(base_schedule).exists() else pd.DataFrame(columns=["Staff"])
 
     # Base geography: area and branch-to-own-accommodation distances.
     acc_pos = {str(a.id): (a.latitude, a.longitude) for a in acc.itertuples()}
@@ -159,10 +160,11 @@ if __name__ == "__main__":
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--distance-scale", type=float, default=1.0,
                    help="multiply branch-to-accommodation distances (scenario: branches far from housing)")
+    p.add_argument("--base", default=str(DATA_FILE), help="workbook whose branches serve as templates")
     p.add_argument("--out", required=True)
     a = p.parse_args()
     sheets, ops, schedule, templates = generate(a.branches, a.per_accommodation, a.acc_per_cluster, a.buses_per_5, a.seed,
-                                                distance_scale=a.distance_scale)
+                                                base_xlsx=a.base, distance_scale=a.distance_scale)
     write(a.out, sheets, ops, schedule, templates)
     print(f"{a.branches} branches, {len(sheets['accommodation'])} accommodations, {len(sheets['clusters'])} clusters, "
           f"{len(sheets['staff'])} staff, {len(sheets['vehicles'])} buses, {len(schedule)} shifts -> {a.out}.xlsx")

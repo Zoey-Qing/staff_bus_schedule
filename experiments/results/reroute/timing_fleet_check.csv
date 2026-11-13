@@ -1,0 +1,9 @@
+cluster,plan,lost_staff_minutes,rider_staff_minutes,lost_pct,fleet,max_on_road,empty_runs,fleet_equals_need
+1aea822f,x0,706,161160,0.438,{'1aea822f-8be9-431d-a346-0b7582b071ac|Small Bus': 2},{'1aea822f-8be9-431d-a346-0b7582b071ac|Small Bus': 2},0,True
+1aea822f,ours,607,160680,0.378,{'1aea822f-8be9-431d-a346-0b7582b071ac|Small Bus': 2},{'1aea822f-8be9-431d-a346-0b7582b071ac|Small Bus': 2},0,True
+a1e8b5a7,x0,452,169560,0.267,{'a1e8b5a7-8ec4-44d9-8cb9-11fbb1341ec3|Small Bus': 2},{'a1e8b5a7-8ec4-44d9-8cb9-11fbb1341ec3|Small Bus': 2},0,True
+a1e8b5a7,ours,392,170940,0.229,{'a1e8b5a7-8ec4-44d9-8cb9-11fbb1341ec3|Small Bus': 2},{'a1e8b5a7-8ec4-44d9-8cb9-11fbb1341ec3|Small Bus': 2},0,True
+ba5b9796,x0,558,145620,0.383,{'ba5b9796-763d-4da5-84c7-645bd32d3adc|Small Bus': 1},{'ba5b9796-763d-4da5-84c7-645bd32d3adc|Small Bus': 1},0,True
+ba5b9796,ours,601,145680,0.413,{'ba5b9796-763d-4da5-84c7-645bd32d3adc|Small Bus': 1},{'ba5b9796-763d-4da5-84c7-645bd32d3adc|Small Bus': 1},0,True
+df75e3dc,x0,49,156540,0.031,{'df75e3dc-d14a-4ed7-a41b-10ef3979ac47|Small Bus': 3},{'df75e3dc-d14a-4ed7-a41b-10ef3979ac47|Small Bus': 3},0,True
+df75e3dc,ours,45,156000,0.029,{'df75e3dc-d14a-4ed7-a41b-10ef3979ac47|Small Bus': 3},{'df75e3dc-d14a-4ed7-a41b-10ef3979ac47|Small Bus': 3},0,True

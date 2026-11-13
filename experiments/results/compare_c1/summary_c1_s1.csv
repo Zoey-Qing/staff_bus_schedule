@@ -1,0 +1,12 @@
+method,source,z,saving_vs_seq,lb,gap,seconds,notes
+sequential,practice,113236.93,0.0000,,,,x0
+classical_benders_nolift,literature,113236.93,0.0000,111242.59,0.01761,6097,z_benders before our re-timing
+ormeci_style_mip,Ormeci et al. 2014,113131.02,0.00094,,,5911,MIP hit time limit (gap 1.46%); no valid LB for the integrated problem
+branch_dw_nolift,Legrain-Omer/Feng/Wang style,113092.44,0.00128,111818.60,0.01126,6232,
+staff_dw_nolift_buckets,van Rossum et al. 2026 style,113236.93,0.0000,108821.29,0.03899,6206,integer master found no solution
+benders_lifted_cg,ours (earlier),113059.82,0.00156,111377.54,0.01488,6206,
+sgcg_frac0.3,ours (new),113189.05,0.00042,111979.42,0.01069,5642,all 6 checks pass; SG-LNS phase 1945 s gave 113230.54
+sgcg_frac0,ours (ablation: no SG-LNS phase),112905.77,0.00292,112094.94,0.00718,5655,all 6 checks pass; 9 integer-master rounds
+benders_seeded_sglns,ours (Benders T then SG-LNS T; total 2T),112896.44,0.00301,111377.54,0.01345,12414,LB from Benders; best found at 5914 s of 6208 s search; file benders_sglns/
+cg_seeded_sglns,ours (branch CG + lifted cuts T then SG-LNS T; total 2T),112848.15,0.00343,112094.94,0.00667,12412,LB from branch CG; 112854 reached at 810 s of search; file cg_sglns/
+cg_seeded_sglns_equal_time,ours (branch CG 0.8T then SG-LNS; total wall 5855 s <= T),112975.99,0.00230,112082.66,0.00791,5855,stage 1 z 113003.27; file cg_sglns_fair/

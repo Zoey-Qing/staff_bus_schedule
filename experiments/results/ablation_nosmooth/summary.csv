@@ -1,0 +1,51 @@
+cluster,id,variant,what,z,saving_pct,share_max_pct,lb,gap_pct,lb_star,z0,checks_ok
+C1,1aea822f,main,main method (no smoothing),112849.55,0.342,33.5,112059.26,0.7,112081.97,113236.93,True
+C1,1aea822f,A1_prices_direct,stage-2 prices: one-trip estimate,112862.4,0.331,32.4,112059.26,0.712,112081.97,113236.93,True
+C1,1aea822f,A2_start_x0,stage 2 starts from x0,113231.66,0.005,0.5,112059.26,1.035,112081.97,113236.93,True
+C1,1aea822f,A3_no_heur,exact pricing only,112844.19,0.347,34.0,112081.97,0.675,112081.97,113236.93,True
+C1,1aea822f,A5_split06,stage 1 = 0.6 Delta,112888.43,0.308,30.2,112034.38,0.757,112081.97,113236.93,True
+C1,1aea822f,A6_no_lift,cuts and prices without lifting,113145.63,0.081,7.9,111792.04,1.196,112081.97,113236.93,True
+C1,1aea822f,M2_stage1_only,stage 1 only (whole budget),112906.51,0.292,28.6,112071.92,0.739,112081.97,113236.93,True
+C1,1aea822f,with_smoothing,main method with dual smoothing,112919.71,0.28,27.5,111987.99,0.825,112081.97,113236.93,True
+C1,1aea822f,M3,"stage 2 only (from x0, one-trip prices)",113100.0,0.121,11.9,,,112081.97,113236.93,True
+C1,1aea822f,L3,"literature: branch CG, no lifting",113042.34,0.172,16.8,111826.99,1.075,112081.97,113236.93,True
+C2,662b3495,main,main method (no smoothing),140896.54,0.206,9.3,137040.83,2.737,138067.48,141187.33,True
+C2,662b3495,A1_prices_direct,stage-2 prices: one-trip estimate,141041.45,0.103,4.7,137040.83,2.836,138067.48,141187.33,True
+C2,662b3495,A2_start_x0,stage 2 starts from x0,140909.59,0.197,8.9,137040.83,2.746,138067.48,141187.33,True
+C2,662b3495,A3_no_heur,exact pricing only,140876.62,0.22,10.0,137090.15,2.688,138067.48,141187.33,True
+C2,662b3495,A5_split06,stage 1 = 0.6 Delta,140828.31,0.254,11.5,136734.76,2.907,138067.48,141187.33,True
+C2,662b3495,A6_no_lift,cuts and prices without lifting,140836.04,0.249,11.3,136822.44,2.85,138067.48,141187.33,True
+C2,662b3495,M2_stage1_only,stage 1 only (whole budget),141184.6,0.002,0.1,138067.48,2.208,138067.48,141187.33,True
+C2,662b3495,with_smoothing,main method with dual smoothing,140897.53,0.205,9.3,136563.32,3.076,138067.48,141187.33,True
+C2,662b3495,M3,"stage 2 only (from x0, one-trip prices)",140729.97,0.324,14.7,,,138067.48,141187.33,True
+C2,662b3495,L3,"literature: branch CG, no lifting",141187.33,-0.0,-0.0,137590.33,2.548,138067.48,141187.33,True
+C3,a1e8b5a7,main,main method (no smoothing),124568.46,1.632,54.2,122693.73,1.505,122818.74,126635.63,True
+C3,a1e8b5a7,A1_prices_direct,stage-2 prices: one-trip estimate,124574.33,1.628,54.0,122693.73,1.51,122818.74,126635.63,True
+C3,a1e8b5a7,A2_start_x0,stage 2 starts from x0,126049.97,0.462,15.3,122693.73,2.663,122818.74,126635.63,True
+C3,a1e8b5a7,A3_no_heur,exact pricing only,124677.26,1.546,51.3,122556.99,1.701,122818.74,126635.63,True
+C3,a1e8b5a7,A5_split06,stage 1 = 0.6 Delta,124911.42,1.362,45.2,122310.56,2.082,122818.74,126635.63,True
+C3,a1e8b5a7,A6_no_lift,cuts and prices without lifting,125797.71,0.662,22.0,121528.83,3.393,122818.74,126635.63,True
+C3,a1e8b5a7,M2_stage1_only,stage 1 only (whole budget),125095.17,1.216,40.4,122818.74,1.82,122818.74,126635.63,True
+C3,a1e8b5a7,with_smoothing,main method with dual smoothing,124642.93,1.574,52.2,122331.49,1.854,122818.74,126635.63,True
+C3,a1e8b5a7,M3,"stage 2 only (from x0, one-trip prices)",125750.48,0.699,23.2,,,122818.74,126635.63,True
+C3,a1e8b5a7,L3,"literature: branch CG, no lifting",126161.93,0.374,12.4,121638.85,3.585,122818.74,126635.63,True
+C4,ba5b9796,main,main method (no smoothing),118424.17,0.503,19.2,115702.84,2.298,115911.74,119022.93,True
+C4,ba5b9796,A1_prices_direct,stage-2 prices: one-trip estimate,118418.67,0.508,19.4,115702.84,2.293,115911.74,119022.93,True
+C4,ba5b9796,A2_start_x0,stage 2 starts from x0,118923.15,0.084,3.2,115702.84,2.708,115911.74,119022.93,True
+C4,ba5b9796,A3_no_heur,exact pricing only,118661.23,0.304,11.6,115724.74,2.475,115911.74,119022.93,True
+C4,ba5b9796,A5_split06,stage 1 = 0.6 Delta,118499.34,0.44,16.8,115699.85,2.362,115911.74,119022.93,True
+C4,ba5b9796,A6_no_lift,cuts and prices without lifting,118751.36,0.228,8.7,115262.69,2.938,115911.74,119022.93,True
+C4,ba5b9796,M2_stage1_only,stage 1 only (whole budget),118484.64,0.452,17.3,115911.74,2.172,115911.74,119022.93,True
+C4,ba5b9796,with_smoothing,main method with dual smoothing,118646.47,0.316,12.1,115676.81,2.503,115911.74,119022.93,True
+C4,ba5b9796,M3,"stage 2 only (from x0, one-trip prices)",118540.08,0.406,15.5,,,115911.74,119022.93,True
+C4,ba5b9796,L3,"literature: branch CG, no lifting",118961.48,0.052,2.0,115457.62,2.945,115911.74,119022.93,True
+C5,df75e3dc,main,main method (no smoothing),115496.46,0.734,48.9,114515.69,0.849,114605.41,116350.09,True
+C5,df75e3dc,A1_prices_direct,stage-2 prices: one-trip estimate,115450.96,0.773,51.5,114515.69,0.81,114605.41,116350.09,True
+C5,df75e3dc,A2_start_x0,stage 2 starts from x0,116006.9,0.295,19.7,114515.69,1.285,114605.41,116350.09,True
+C5,df75e3dc,A3_no_heur,exact pricing only,115393.06,0.823,54.9,114605.41,0.683,114605.41,116350.09,True
+C5,df75e3dc,A5_split06,stage 1 = 0.6 Delta,115450.09,0.774,51.6,114571.32,0.761,114605.41,116350.09,True
+C5,df75e3dc,A6_no_lift,cuts and prices without lifting,115674.27,0.581,38.7,114263.38,1.22,114605.41,116350.09,True
+C5,df75e3dc,M2_stage1_only,stage 1 only (whole budget),115523.04,0.711,47.4,114522.62,0.866,114605.41,116350.09,True
+C5,df75e3dc,with_smoothing,main method with dual smoothing,115424.76,0.795,53.0,114565.96,0.744,114605.41,116350.09,True
+C5,df75e3dc,M3,"stage 2 only (from x0, one-trip prices)",115847.96,0.432,28.8,,,114605.41,116350.09,True
+C5,df75e3dc,L3,"literature: branch CG, no lifting",115656.91,0.596,39.7,114283.43,1.188,114605.41,116350.09,True

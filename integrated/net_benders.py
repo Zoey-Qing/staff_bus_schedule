@@ -92,6 +92,7 @@ class StaffModel:
 class ClusterProblem:
     def __init__(self, cluster, data_file, args, threads=0, w_bus=1.0):
         self.cluster, self.threads, self.w_bus = cluster, threads, w_bus
+        self.closed_price = "lift"  # "zero" only for the lifting ablation
         args.data_file = str(data_file)
         args.w_bus_trip = w_bus
         branches = sorted(b for b, c in branch_cluster(data_file).items() if c == cluster)
@@ -157,6 +158,12 @@ class ClusterProblem:
                         best = min(best, float((g[k] - tb.mem @ others)[keep].min()))
                 prices[b, a, t] = best
                 priced.add(b)
+        if self.closed_price == "zero":
+            # ablation: no lifting. A lower price keeps every dual constraint, so min(0, lifted) is still a valid cut,
+            # but the master learns nothing about the cost of opening a new stop
+            for s in prices:
+                if s not in pi:
+                    prices[s] = min(0.0, prices[s])
         # the cut must equal the LP value at its own stops
         check = sum(pi[s] for s in open_stops)
         assert abs(check - value) <= 1e-5 * max(1.0, abs(value)), (check, value)
@@ -200,7 +207,7 @@ class ClusterProblem:
         return vals, plan, vals["j_reg"] + vals["j_over"] + plan.cost
 
     def benders(self, x0, master_times=(1200, 1200, 1200, 1200, 1200), master_gap=1e-3, target_gap=0.002, retime_rounds=1,
-                retime_time=1200, log=print):
+                retime_time=1200, bound_time=0, log=print):
         t_all = time.time()
         args = self.args
         args.w_bus_trip = self.w_bus
@@ -224,15 +231,18 @@ class ClusterProblem:
         lower, history, x_on, cuts, visited = -math.inf, [], set(x0), [], [(set(x0), plan0.cost), (set(x_u), plan_u.cost)]
         seen = set()
         t0 = time.time()
-        for i, limit in enumerate(master_times):
+        def start_at(xs):
             start = m.new_solution()
-            for key in x_on:
+            for key in xs:
                 start.add_var_value(x[key], 1)
-            open_now = self.net.demand(self.events(x_on))[2]
+            open_now = self.net.demand(self.events(xs))[2]
             for s, var in y.items():
                 start.add_var_value(var, 1 if s in open_now else 0)
             start.add_var_value(theta, max([sum(pr for s, pr in c.items() if s in open_now) for c in cuts], default=0.0) + 1e-6)
             set_start(m, start)
+
+        for i, limit in enumerate(master_times):
+            start_at(x_on)
             sol, info = _solve(m, limit, master_gap, None, self.threads)
             if not sol:
                 log(f"round {i}: master found no solution ({info['status']})")
@@ -261,6 +271,16 @@ class ClusterProblem:
             x_on = x_new
             if gap <= target_gap or repeat:
                 break
+        if bound_time > 0 and history and history[-1]["gap"] > target_gap:
+            # bound phase: once the cuts stop changing, one longer solve of the same master that only tries to raise the lower bound
+            start_at(best["x"])
+            m.parameters.emphasis.mip = 3
+            sol, info = _solve(m, bound_time, master_gap, None, self.threads)
+            m.parameters.emphasis.mip = 0
+            lower = max(lower, info["best_bound"])
+            history.append(dict(round="bound", lb=lower, ub=None, best=best["z"], gap=(best["z"] - lower) / best["z"], master_gap=info["mip_gap"],
+                                master_status=info["status"], seconds=time.time() - t0))
+            log(f"bound phase: LB {lower:,.2f}  best {best['z']:,.2f}  gap {history[-1]['gap']:.3%}  {info['status']}  {time.time() - t0:.0f}s")
         benders_z, benders_time = best["z"], time.time() - t0
         best = self.retime(best, limits, evaluator, retime_rounds, retime_time, log)
         visited.append((set(best["x"]), best["plan"].cost))
@@ -418,12 +438,16 @@ if __name__ == "__main__":
     p.add_argument("--seq-time", type=float, default=1200)
     p.add_argument("--seq-only", action="store_true")
     p.add_argument("--m-scale", type=float, default=1.0)
+    p.add_argument("--bound-time", type=float, default=0, help="seconds of a final master solve with bound emphasis; 0 = none")
+    p.add_argument("--closed-price", choices=["lift", "zero"], default="lift",
+                   help="prices of closed stops in a cut: lifted (the method) or min(0, lifted) (ablation)")
     a = p.parse_args()
     cluster = next(c for c in set(branch_cluster(a.data).values()) if c.startswith(a.cluster))
     staff = staff_args()
     for name in ("M1", "M2", "M3", "M4"):
         setattr(staff, name, getattr(staff, name) * a.m_scale)
     prob = ClusterProblem(cluster, a.data, staff, a.threads, a.w_bus)
+    prob.closed_price = a.closed_price
     seq_file = Path(f"{a.out}_x0.csv")
     if seq_file.exists():
         x0 = load_schedule(seq_file, prob.data.staff_ids)
@@ -437,7 +461,7 @@ if __name__ == "__main__":
             json.dump(dict(cluster=cluster[:8], w_bus=a.w_bus, z=z, wages=vals["j_reg"], overtime=vals["j_over"], levels=vals["levels"], plan=_parts(plan)), f, indent=1, default=float)
         sys.exit(0)
     res, x = prob.benders(x0, [float(v) for v in a.master_times.split(",")], retime_rounds=a.retime_rounds, retime_time=a.retime_time,
-                          log=lambda s: print(s, flush=True))
+                          bound_time=a.bound_time, log=lambda s: print(s, flush=True))
     with open(f"{a.out}.json", "w") as f:
         json.dump(res, f, indent=1, default=float)
     save_schedule(x, prob.shift, f"{a.out}_schedule.csv")

@@ -1,0 +1,53 @@
+{
+ "cluster": "662b3495",
+ "open_stops": 260,
+ "possible_stops": 840,
+ "lp_value": 8618.817556679398,
+ "cg_iterations": 71,
+ "cut_seconds": 10.618337154388428,
+ "lifted": {
+  "trip": 2.842170943040401e-14,
+  "trip_routes": 109200,
+  "trip_routes_violated": 0,
+  "empty_run": -Infinity,
+  "waiting": 0.0,
+  "fleet": -0.0
+ },
+ "zero_closed": {
+  "trip": 2.842170943040401e-14,
+  "trip_routes": 109200,
+  "trip_routes_violated": 0,
+  "empty_run": -Infinity,
+  "waiting": 0.0,
+  "fleet": -0.0
+ },
+ "closed_price_stats": {
+  "n": 580,
+  "min": 0.03872693226573176,
+  "median": 3.792397944398047,
+  "max": 63.05926967370412,
+  "negative": 0
+ },
+ "random": [
+  {
+   "stops": 260,
+   "lp": 9373.780480618505,
+   "cut": 7245.29804186564,
+   "slack": 2128.482438752865,
+   "zero_cut": 6694.421160391279,
+   "zero_slack": 2679.359320227226,
+   "seconds": 8.475135326385498
+  },
+  {
+   "stops": 260,
+   "lp": 9389.923445628898,
+   "cut": 7473.401335475186,
+   "slack": 1916.5221101537118,
+   "zero_cut": 6966.245191586434,
+   "zero_slack": 2423.678254042464,
+   "seconds": 14.28676152229309
+  }
+ ],
+ "min_slack": 1916.5221101537118,
+ "min_zero_slack": 2423.678254042464
+}

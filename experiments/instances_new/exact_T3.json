@@ -1,0 +1,21 @@
+{
+ "name": "T3",
+ "cluster": "0af68d49",
+ "riders": 15,
+ "round_trip_min": 6,
+ "bus": "Small Bus",
+ "bus_capacity": 20,
+ "z_star": 20352.70627414212,
+ "mip_status": "integer optimal solution",
+ "mip_gap": 0.0,
+ "best_bound": 20352.70627414212,
+ "z_star_routed": 20352.70651950148,
+ "open_stops": 41,
+ "z0": 20454.588830562923,
+ "lb": 20334.594836512922,
+ "z_ours": 20356.076519501476,
+ "lb_le_zstar": true,
+ "zstar_le_ours": true,
+ "gap_ours_pct": 0.10552958458361683,
+ "ours_above_opt_pct": 0.016559200108125255
+}

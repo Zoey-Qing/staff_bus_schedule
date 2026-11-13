@@ -1,0 +1,16 @@
+{
+ "cluster": "ba5b9796",
+ "stops": 252,
+ "trips": 231256,
+ "solver": 6697.291817464464,
+ "solver_lp": 6697.291817464466,
+ "solver_seconds": 5.716481447219849,
+ "full_lp": 6697.291817464466,
+ "exact": 6697.291817464466,
+ "exact_bound": 6697.291817464466,
+ "exact_status": "integer optimal solution",
+ "exact_seconds": 8.896868228912354,
+ "lp_cut": 6452.739092157628,
+ "solver_excess_pct": -2.7160073849589394e-14,
+ "cut_lp_below_exact": true
+}

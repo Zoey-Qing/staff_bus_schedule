@@ -1,0 +1,43 @@
+Wed Nov 11 12:11:35 PST 2026 start T2 T=1800 env=
+Wed Nov 11 12:11:35 PST 2026 start T1 T=1800 env=
+Wed Nov 11 12:11:35 PST 2026 start G1 T=5400 env=
+Wed Nov 11 12:11:35 PST 2026 start T3 T=1800 env=
+Wed Nov 11 12:13:41 PST 2026 done T3
+Wed Nov 11 12:13:41 PST 2026 start G2 T=5400 env=
+Wed Nov 11 12:18:38 PST 2026 done T1
+Wed Nov 11 12:18:38 PST 2026 start G3 T=5400 env=
+Wed Nov 11 12:26:51 PST 2026 done T2
+Wed Nov 11 12:26:51 PST 2026 start G4 T=5400 env=
+Wed Nov 11 12:56:42 PST 2026 done G1
+Wed Nov 11 12:56:42 PST 2026 start G5 T=5400 env=
+Wed Nov 11 13:40:45 PST 2026 done G2
+Wed Nov 11 13:40:46 PST 2026 start S_speed20 T=6086 env=NET_SPEED=20 X0DIR=E:/schedule/revision/results_new/original/benders
+Wed Nov 11 13:46:49 PST 2026 done G3
+Wed Nov 11 13:46:49 PST 2026 start S_window15 T=6086 env=NET_WINDOW=15 X0DIR=E:/schedule/revision/results_new/original/benders
+Wed Nov 11 13:59:49 PST 2026 done G4
+Wed Nov 11 13:59:50 PST 2026 start S_fleet4 T=6086 env=NET_FIXED_SCALE=4 X0DIR=E:/schedule/revision/results_new/original/benders
+Wed Nov 11 14:23:46 PST 2026 done G5
+Wed Nov 11 14:23:46 PST 2026 start S_buscost3 T=6086 env=BUS_COST_SCALE=3 X0DIR=E:/schedule/revision/results_new/original/benders
+Wed Nov 11 15:16:58 PST 2026 done S_speed20
+Wed Nov 11 15:22:47 PST 2026 done S_window15
+Wed Nov 11 15:36:41 PST 2026 done S_fleet4
+Wed Nov 11 15:59:41 PST 2026 done S_buscost3
+ALL_DONE
+Thu Nov 12 08:52:31 PST 2026 RERUN start (z_seq fix)
+Thu Nov 12 08:52:32 PST 2026 start T3 T=1800 env=
+Thu Nov 12 08:52:32 PST 2026 start T2 T=1800 env=
+Thu Nov 12 08:52:32 PST 2026 start T1 T=1800 env=
+Thu Nov 12 08:52:32 PST 2026 start G1 T=5400 env=
+Thu Nov 12 09:16:20 PST 2026 done T1
+Thu Nov 12 09:16:21 PST 2026 start G2 T=5400 env=
+Thu Nov 12 09:16:34 PST 2026 done T3
+Thu Nov 12 09:16:34 PST 2026 start G3 T=5400 env=
+Thu Nov 12 09:16:52 PST 2026 done T2
+Thu Nov 12 09:16:52 PST 2026 start G4 T=5400 env=
+Thu Nov 12 10:20:46 PST 2026 done G1
+Thu Nov 12 10:20:46 PST 2026 start G5 T=5400 env=
+Thu Nov 12 11:02:54 PST 2026 done G2
+Thu Nov 12 11:04:33 PST 2026 done G3
+Thu Nov 12 11:09:24 PST 2026 done G4
+Thu Nov 12 12:06:33 PST 2026 done G5
+RERUN_DONE

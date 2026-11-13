@@ -1,0 +1,21 @@
+{
+ "name": "T1",
+ "cluster": "41835ef9",
+ "riders": 8,
+ "round_trip_min": 12,
+ "bus": "Small Bus",
+ "bus_capacity": 20,
+ "z_star": 19383.967136120882,
+ "mip_status": "integer optimal solution",
+ "mip_gap": 0.0,
+ "best_bound": 19383.967136120882,
+ "z_star_routed": 19383.9673580302,
+ "open_stops": 46,
+ "z0": 19419.54060655456,
+ "lb": 19363.591231661863,
+ "z_ours": 19412.52979442347,
+ "lb_le_zstar": true,
+ "zstar_le_ours": true,
+ "gap_ours_pct": 0.25209781146435073,
+ "ours_above_opt_pct": 0.14735197445399592
+}

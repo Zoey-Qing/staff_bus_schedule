@@ -9,6 +9,8 @@ Benders (imported unchanged) then runs on the best schedule.
 
 Usage: python staff_surrogate.py --cluster <id prefix> --data <data.xlsx> --schedule <x0.csv> --time-limit <seconds> --out <file.json>
 --penalties runs the penalty objective instead of the service limits, as a sensitivity check against E4.
+--ablation static keeps the initial prices (no regression); --ablation lns drops the upper-level solve and keeps only the
+neighbor moves around the best schedule; --ablation lns_fit does the same but refits the prices each round.
 """
 import argparse
 import io
@@ -280,18 +282,29 @@ def run(a, log):
                 best, best_x, best_k, best_at = e, set(xn), k, time.time() - t0
         if left() <= 0:
             break
-        sg.fit(a.lam)
-        xs, info = sg.solve(x_on, a.radius, min(a.master_time, left()), a.gap, a.threads, start=x_on)
-        if xs is None:
-            log(f"round {k}: no solution ({info['status']})")
-            break
-        e = prob.evaluate(xs)
-        f = sg.features(xs)
-        pred = sg.beta + f @ sg.pi()
-        dpred.append(float((f - base) @ sg.pi()))
-        dreal.append(e["v"] - cur_v)
-        sg.A.append(f)
-        sg.v.append(e["v"])
+        if a.ablation in ("lns", "lns_fit"):
+            # no upper-level solve: the search goes on from the best schedule found so far; lns_fit still refits the
+            # prices that perturb the neighbor moves
+            if not n_found:
+                continue
+            if a.ablation == "lns_fit":
+                sg.fit(a.lam)
+            xs, e, info = set(best_x), best, dict(status="none", mip_gap=0.0)
+            pred = float("nan")
+        else:
+            if a.ablation == "none":
+                sg.fit(a.lam)
+            xs, info = sg.solve(x_on, a.radius, min(a.master_time, left()), a.gap, a.threads, start=x_on)
+            if xs is None:
+                log(f"round {k}: no solution ({info['status']})")
+                break
+            e = prob.evaluate(xs)
+            f = sg.features(xs)
+            pred = sg.beta + f @ sg.pi()
+            dpred.append(float((f - base) @ sg.pi()))
+            dreal.append(e["v"] - cur_v)
+            sg.A.append(f)
+            sg.v.append(e["v"])
         if e[score] < best[score] - 1e-6:
             best, best_x, best_k, best_at = e, set(xs), k, time.time() - t0
         moved = len(xs ^ x_on) // 2
@@ -334,6 +347,8 @@ if __name__ == "__main__":
     p.add_argument("--gap", type=float, default=1e-3)
     p.add_argument("--threads", type=int, default=3)
     p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--ablation", choices=["none", "static", "lns", "lns_fit"], default="none",
+                   help="static: prices stay at the one-trip estimate (no fit); lns: no upper-level solve, only the neighbor moves; lns_fit: lns with the regression")
     p.add_argument("--out", required=True)
     a = p.parse_args()
     res, x = run(a, lambda s: print(s, flush=True))

@@ -28,7 +28,12 @@ if __name__ == "__main__":
     p.add_argument("data", nargs="+")
     p.add_argument("--jobs", type=int, default=5)
     p.add_argument("--threads", type=int, default=3)
+    p.add_argument("--master-times", default=None, help="passed to net_benders.py; its default when omitted")
+    p.add_argument("--bound-time", default=None, help="passed to net_benders.py; its default when omitted")
+    p.add_argument("--closed-price", default=None, help="passed to net_benders.py; its default when omitted")
     a = p.parse_args()
+    extra = (["--master-times", a.master_times] if a.master_times else []) + (["--bound-time", a.bound_time] if a.bound_time else []) \
+        + (["--closed-price", a.closed_price] if a.closed_price else [])
     out_dir = Path(a.out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     data = [str(Path(f).resolve()) for f in a.data]
@@ -39,7 +44,7 @@ if __name__ == "__main__":
             f, c, prefix = todo.pop(0)
             log = open(f"{prefix}.log", "a")
             proc = subprocess.Popen([sys.executable, "-u", str(HERE / "net_benders.py"), f, str(prefix), "--cluster", c,
-                                     "--threads", str(a.threads)], cwd=HERE, stdout=log, stderr=subprocess.STDOUT)
+                                     "--threads", str(a.threads)] + extra, cwd=HERE, stdout=log, stderr=subprocess.STDOUT)
             running.append((proc, prefix.name, log))
             print(f"started {prefix.name}", flush=True)
         time.sleep(30)

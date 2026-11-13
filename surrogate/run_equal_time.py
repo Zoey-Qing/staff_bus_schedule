@@ -1,7 +1,7 @@
 """Run the surrogate on every cluster that Benders has finished, with the same start schedule and the time Benders used before
 re-timing, five jobs at a time. A run with a result file is skipped.
 
-Usage: python run_equal_time.py <benders_dir> <out_dir> --seeds 1,2,3
+Usage: python run_equal_time.py <benders_dir> <out_dir> --seeds 1,2,3 [--ablation static|lns]
 """
 import argparse
 import json
@@ -21,13 +21,14 @@ def data_file(stem):
 
 
 def job(spec):
-    src, out, seed, threads = spec
+    src, out, seed, threads, ablation, noise, factor = spec
     with open(src) as f:
-        seconds = json.load(f)["benders_seconds"]
+        seconds = factor * json.load(f)["benders_seconds"]
     stem, cluster = src.stem.rsplit("_", 1)
     cmd = [sys.executable, "-u", str(ROOT / "surrogate" / "staff_surrogate.py"), "--cluster", cluster, "--data", str(data_file(stem)),
            "--schedule", str(src.with_name(f"{src.stem}_x0.csv")), "--time-limit", f"{seconds:.0f}", "--seed", str(seed),
-           "--threads", str(threads), "--out", str(out.with_suffix(".json"))]
+           "--threads", str(threads), "--ablation", ablation, "--out", str(out.with_suffix(".json"))] \
+        + (["--noise", noise] if noise is not None else [])
     with open(out.with_suffix(".log"), "w") as log:
         code = subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT).returncode
     print(f"finished {out.name} exit {code}", flush=True)
@@ -41,10 +42,13 @@ if __name__ == "__main__":
     p.add_argument("--seeds", default="1,2,3")
     p.add_argument("--jobs", type=int, default=5)
     p.add_argument("--threads", type=int, default=3)
+    p.add_argument("--ablation", default="none")
+    p.add_argument("--noise", default=None, help="passed to staff_surrogate.py; its default when omitted")
+    p.add_argument("--time-factor", type=float, default=1.0, help="time limit as a multiple of the Benders time (convergence runs)")
     a = p.parse_args()
     out_dir = Path(a.out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
-    specs = [(f, out_dir / f"{f.stem}_s{s}", s, a.threads) for s in a.seeds.split(",") for f in sorted(Path(a.benders_dir).resolve().glob("*.json"))]
+    specs = [(f, out_dir / f"{f.stem}_s{s}", s, a.threads, a.ablation, a.noise, a.time_factor) for s in a.seeds.split(",") for f in sorted(Path(a.benders_dir).resolve().glob("*.json"))]
     specs = [sp for sp in specs if not sp[1].with_suffix(".log").exists() or "DONE" not in sp[1].with_suffix(".log").read_text()]
     print(f"{len(specs)} runs to do", flush=True)
     with ThreadPoolExecutor(a.jobs) as pool:

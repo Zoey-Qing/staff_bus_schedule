@@ -1,0 +1,5 @@
+stage 1 wall 4409 s
+stage 2 search time 1397 s
+stage 2 wall 1446 s
+total wall 5855 s of 6206
+FINISHED

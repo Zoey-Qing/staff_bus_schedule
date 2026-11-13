@@ -1,0 +1,12 @@
+T1 E:/schedule/revision/instances_new/T1.xlsx 41835ef9 1800
+T2 E:/schedule/revision/instances_new/T2.xlsx 217c81a4 1800
+T3 E:/schedule/revision/instances_new/T3.xlsx 0af68d49 1800
+G1 E:/schedule/revision/instances_new/G1.xlsx 41835ef9 5400
+G2 E:/schedule/revision/instances_new/G2.xlsx 41835ef9 5400
+G3 E:/schedule/revision/instances_new/G3.xlsx 41835ef9 5400
+G4 E:/schedule/revision/instances_new/G4.xlsx 41835ef9 5400
+G5 E:/schedule/revision/instances_new/G5.xlsx 41835ef9 5400
+S_speed20 E:/schedule/staff_scheduling/Berkeley_Mock_Data_25_Stores_original_unbalanced.xlsx a1e8b5a7 6086 NET_SPEED=20 X0DIR=E:/schedule/revision/results_new/original/benders
+S_window15 E:/schedule/staff_scheduling/Berkeley_Mock_Data_25_Stores_original_unbalanced.xlsx a1e8b5a7 6086 NET_WINDOW=15 X0DIR=E:/schedule/revision/results_new/original/benders
+S_fleet4 E:/schedule/staff_scheduling/Berkeley_Mock_Data_25_Stores_original_unbalanced.xlsx a1e8b5a7 6086 NET_FIXED_SCALE=4 X0DIR=E:/schedule/revision/results_new/original/benders
+S_buscost3 E:/schedule/staff_scheduling/Berkeley_Mock_Data_25_Stores_original_unbalanced.xlsx a1e8b5a7 6086 BUS_COST_SCALE=3 X0DIR=E:/schedule/revision/results_new/original/benders

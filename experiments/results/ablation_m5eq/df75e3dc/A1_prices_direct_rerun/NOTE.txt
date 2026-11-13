@@ -1,0 +1,1 @@
+Rerun of A1 on df75e3dc: the first run (A1_prices_direct/) stopped with a negative CPLEX time limit at the end of its search (race between the clock check and the solve), before re-timing; benders_sglns.py now checks the clock again before each repair solve. Same inputs, seed and search time (1280 s). Run alone, so the machine load differs from the wave.

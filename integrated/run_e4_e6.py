@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-DATA = str((HERE.parent / "staff_scheduling" / "Berkeley_Mock_Data_25_Stores.xlsx").resolve())
+DATA = str((HERE.parent / "staff_scheduling" / "Berkeley_Mock_Data_25_Stores_original_unbalanced.xlsx").resolve())
 STEM = Path(DATA).stem
 CLUSTERS = ["1aea822f", "662b3495", "a1e8b5a7", "ba5b9796", "df75e3dc"]
 
